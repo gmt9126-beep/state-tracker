@@ -80,13 +80,13 @@ h1 { font-family: var(--font-display); font-weight: 900; font-size: clamp(34px, 
 .map-box { position: relative; }
 #map { width: 100%; height: auto; display: block; }
 #map path.st { fill: var(--land); stroke: var(--border); stroke-width: .9; cursor: pointer; transition: fill .15s; }
-#map path.st:hover { stroke: var(--ink); stroke-width: 1.6; }
-#map path.st:focus { outline: none; stroke: var(--focus); stroke-width: 2.2; }
+@media (hover: hover) { #map path.st:hover { stroke: var(--ink); stroke-width: 1.6; } #map .callout:hover rect { stroke: var(--ink); } }
+#map path.st:focus { outline: none; }
+#map path.st:focus-visible { stroke: var(--focus); stroke-width: 2.2; }
 #map .lbl { font-family: var(--font-display); font-weight: 800; font-size: 11px; text-anchor: middle; pointer-events: none; fill: var(--muted); }
 #map .callout rect { fill: var(--land); stroke: var(--border); cursor: pointer; }
-#map .callout:hover rect { stroke: var(--ink); }
 #map .callout:focus { outline: none; }
-#map .callout:focus rect { stroke: var(--focus); stroke-width: 2; }
+#map .callout:focus-visible rect { stroke: var(--focus); stroke-width: 2; }
 #map .callout text { font-family: var(--font-display); font-weight: 800; font-size: 11px; text-anchor: middle; pointer-events: none; }
 .l0 { --f: var(--land); --t: var(--muted); }
 .l1 { --f: var(--l1); --t: var(--l1-ink); }
@@ -245,14 +245,24 @@ footer { font-size: 12px; color: var(--muted); }
     tip.style.top = (evt.clientY - r.top) + "px";
     tip.hidden = false;
   }
+  var tipTimer = null;
   function wire(node, id) {
     node.setAttribute("tabindex", "0");
     node.setAttribute("role", "button");
-    node.addEventListener("click", function () { paint(id); });
+    // Paint first, then show the tooltip so it always reports the new level.
+    // On touch screens there is no hover, so the tooltip shows briefly after a tap and then hides.
+    node.addEventListener("click", function (e) {
+      paint(id);
+      clearTimeout(tipTimer);
+      showTip(id, e);
+      if (lastPointer !== "mouse") tipTimer = setTimeout(function () { tip.hidden = true; }, 1400);
+    });
     node.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); paint(id); } });
-    node.addEventListener("mousemove", function (e) { showTip(id, e); });
-    node.addEventListener("mouseleave", function () { tip.hidden = true; });
+    node.addEventListener("pointermove", function (e) { if (e.pointerType === "mouse") { clearTimeout(tipTimer); showTip(id, e); } });
+    node.addEventListener("pointerleave", function (e) { if (e.pointerType === "mouse") tip.hidden = true; });
   }
+  var lastPointer = "mouse";
+  window.addEventListener("pointerdown", function (e) { lastPointer = e.pointerType || "mouse"; }, true);
   try {
     var topo = Datamap.prototype.usaTopo;
     var objKey = Object.keys(topo.objects)[0];
