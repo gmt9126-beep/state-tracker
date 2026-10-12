@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>States I've Been To</title>
+<style>
+/* Layout: road-atlas page. Header with interstate-shield counter, map as the main plate, map key as the brush, state index below. */
+:root {
+  --paper: #EFF2EE;
+  --sheet: #F8FAF7;
+  --ink: #15232C;
+  --muted: #5A6A72;
+  --land: #D9DFD7;
+  --border: #FFFFFF;
+  --rule: #CBD3CC;
+  --shield: #1D4C9B;
+  --shield-red: #C2312C;
+  --l4: #D63F8C;
+  --l3: #2E9B57;
+  --l2: #5BA2B8;
+  --l1: #A88BD9;
+  --l4-ink: #FFFFFF;
+  --l3-ink: #FFFFFF;
+  --l2-ink: #0F2A36;
+  --l1-ink: #1E1433;
+  --focus: #C2312C;
+  --font-display: "SF Hello", "SF Compact Display", "SF Pro Display", -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", sans-serif;
+  --font-body: "SF Hello", "SF Compact Text", "SF Pro Text", -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", sans-serif;
+  --font-mono: "SF Hello", "SF Compact Text", "SF Pro Text", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0E161B; --sheet: #142027; --ink: #E4EBED; --muted: #93A4AB;
+    --land: #25323A; --border: #0E161B; --rule: #2A3840;
+    --shield: #3C6FC4; --shield-red: #E0534C;
+    --l4: #F27BB5; --l3: #5CC98A; --l2: #2F7F97; --l1: #7458B0;
+    --l4-ink: #0E161B; --l3-ink: #0E161B; --l2-ink: #F1F6F7; --l1-ink: #F1ECFA;
+    --focus: #E0534C; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0E161B; --sheet: #142027; --ink: #E4EBED; --muted: #93A4AB;
+  --land: #25323A; --border: #0E161B; --rule: #2A3840;
+  --shield: #3C6FC4; --shield-red: #E0534C;
+  --l4: #F27BB5; --l3: #5CC98A; --l2: #2F7F97; --l1: #7458B0;
+  --l4-ink: #0E161B; --l3-ink: #0E161B; --l2-ink: #F1F6F7; --l1-ink: #F1ECFA;
+  --focus: #E0534C; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+[hidden] { display: none !important; }
+body { background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 56px; display: grid; gap: 28px; }
+
+header { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; justify-content: space-between; }
+.title { min-width: 0; flex: 1 1 340px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--font-display); font-weight: 900; font-size: clamp(34px, 6vw, 58px); line-height: .95; letter-spacing: -.02em; margin: 6px 0 10px; text-wrap: balance; }
+.lede { margin: 0; color: var(--muted); max-width: 56ch; }
+
+.shield-block { display: flex; align-items: center; gap: 14px; }
+.shield { width: 104px; height: 112px; flex: none; }
+.shield .num { font-family: var(--font-display); font-weight: 900; fill: #fff; }
+.shield .cap { font-family: var(--font-display); font-weight: 800; fill: #fff; letter-spacing: .1em; }
+.shield-label { font-family: var(--font-display); font-weight: 800; font-size: 18px; line-height: 1.15; }
+.shield-label small { display: block; font-family: var(--font-mono); font-weight: 400; font-size: 12px; color: var(--muted); }
+
+.plate { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 18px; display: grid; gap: 16px; }
+.key { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.key-label { font-family: var(--font-mono); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-right: 4px; }
+.brush { display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid var(--rule); background: transparent; color: var(--ink); font: 600 14px var(--font-body); padding: 7px 12px 6px; border-radius: 999px; cursor: pointer; }
+.brush .sw { width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--rule); }
+.brush .ct { font-family: var(--font-mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.brush[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--sheet); }
+.brush[aria-pressed="true"] .ct { color: var(--sheet); opacity: .75; }
+.brush:focus-visible, .chip:focus-visible, button:focus-visible, select:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.hint { font-size: 13px; color: var(--muted); margin: 0; }
+
+.map-box { position: relative; }
+#map { width: 100%; height: auto; display: block; }
+#map path.st { fill: var(--land); stroke: var(--border); stroke-width: .9; cursor: pointer; transition: fill .15s; }
+#map path.st:hover { stroke: var(--ink); stroke-width: 1.6; }
+#map path.st:focus { outline: none; stroke: var(--focus); stroke-width: 2.2; }
+#map .lbl { font-family: var(--font-display); font-weight: 800; font-size: 11px; text-anchor: middle; pointer-events: none; fill: var(--muted); }
+#map .callout rect { fill: var(--land); stroke: var(--border); cursor: pointer; }
+#map .callout:hover rect { stroke: var(--ink); }
+#map .callout:focus { outline: none; }
+#map .callout:focus rect { stroke: var(--focus); stroke-width: 2; }
+#map .callout text { font-family: var(--font-display); font-weight: 800; font-size: 11px; text-anchor: middle; pointer-events: none; }
+.l0 { --f: var(--land); --t: var(--muted); }
+.l1 { --f: var(--l1); --t: var(--l1-ink); }
+.l2 { --f: var(--l2); --t: var(--l2-ink); }
+.l3 { --f: var(--l3); --t: var(--l3-ink); }
+.l4 { --f: var(--l4); --t: var(--l4-ink); }
+#map path.st[class*=" l"], #map .callout rect { fill: var(--f); }
+#map .lbl, #map .callout text { fill: var(--t); }
+.map-fallback { padding: 40px 16px; text-align: center; color: var(--muted); }
+
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--sheet); font-size: 13px; padding: 6px 10px; border-radius: 4px; white-space: nowrap; transform: translate(-50%, calc(-100% - 12px)); }
+.tip b { font-family: var(--font-display); font-weight: 800; }
+
+.tally { display: grid; gap: 8px; }
+.bar { display: flex; height: 12px; border-radius: 3px; overflow: hidden; background: var(--land); }
+.bar span { display: block; height: 100%; transition: width .3s; }
+.tally-row { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.tally-row b { color: var(--ink); font-family: var(--font-mono); font-weight: 600; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.btn { font: 600 14px var(--font-body); padding: 8px 14px 7px; border-radius: 4px; border: 1.5px solid var(--rule); background: var(--sheet); color: var(--ink); cursor: pointer; }
+.btn:hover { border-color: var(--ink); }
+.btn.danger { color: var(--shield-red); }
+.btn.solid { background: var(--shield); border-color: var(--shield); color: #fff; }
+.status { font-size: 13px; color: var(--muted); }
+
+section.index h2 { font-family: var(--font-display); font-weight: 900; font-size: 24px; margin: 0 0 4px; }
+section.index p { margin: 0 0 14px; color: var(--muted); font-size: 14px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px 14px; }
+.row { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--rule); min-width: 0; }
+.row .ab { font-family: var(--font-mono); font-weight: 600; font-size: 12px; width: 30px; height: 22px; display: grid; place-items: center; border-radius: 3px; background: var(--f); color: var(--t); flex: none; }
+.row label { flex: 1; min-width: 0; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row select { font: 13px var(--font-body); color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 4px; padding: 3px 4px; max-width: 132px; }
+
+footer { font-size: 12px; color: var(--muted); }
+@media (max-width: 520px) {
+  .wrap { padding-inline: 16px; }
+  .plate { padding: 12px; }
+  .shield { width: 84px; height: 90px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="title">
+      <div class="eyebrow">Travel log · 50 states + D.C.</div>
+      <h1>States I've Been To</h1>
+      <p class="lede">Pick a level from the map key, then tap states to fill them in. Tap a state again with the same level to clear it. Your map saves in this browser.</p>
+    </div>
+    <div class="shield-block">
+      <svg class="shield" viewBox="0 0 100 108" role="img" aria-labelledby="shieldTitle">
+        <title id="shieldTitle">States visited</title>
+        <path d="M50 4 C62 10 78 10 92 4 C97 20 98 32 96 44 C92 76 72 94 50 104 C28 94 8 76 4 44 C2 32 3 20 8 4 C22 10 38 10 50 4 Z" fill="var(--shield)" stroke="#fff" stroke-width="3"/>
+        <path d="M8 4 C22 10 38 10 50 4 C62 10 78 10 92 4 C94 12 95 20 96 28 L4 28 C5 20 6 12 8 4 Z" fill="var(--shield-red)"/>
+        <text class="cap" x="50" y="22" text-anchor="middle" font-size="11">STATES</text>
+        <text class="num" id="shieldNum" x="50" y="76" text-anchor="middle" font-size="40">0</text>
+      </svg>
+      <div class="shield-label">of 50 states<small id="shieldSub">plus D.C. not yet</small></div>
+    </div>
+  </header>
+
+  <div class="plate">
+    <div class="key" role="group" aria-label="Map key: choose a level to paint">
+      <span class="key-label">Map key</span>
+      <div id="brushes" class="key"></div>
+    </div>
+    <div class="map-box" id="mapBox">
+      <svg id="map" viewBox="0 0 960 520" role="group" aria-label="Map of the United States"></svg>
+      <div class="tip" id="tip" hidden></div>
+    </div>
+    <div class="tally">
+      <div class="bar" id="bar" aria-hidden="true"></div>
+      <div class="tally-row" id="tallyRow"></div>
+    </div>
+    <div class="actions">
+      <button class="btn solid" id="copyBtn" type="button">Copy my summary</button>
+      <button class="btn" id="exampleBtn" type="button">Load an example map</button>
+      <button class="btn danger" id="resetBtn" type="button">Clear map</button>
+      <span class="status" id="status" role="status"></span>
+    </div>
+  </div>
+
+  <section class="index">
+    <h2>State index</h2>
+    <p>Same map as a list, handy for small states and keyboards.</p>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <footer>Levels follow a simple rule: count the deepest experience you had in each state. Airports and drive-throughs count as “Passed through,” not as a visit.</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/1.6.20/topojson.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/datamaps/0.5.9/datamaps.usa.min.js"></script>
+<script>
+(function () {
+  var LEVELS = [
+    { v: 4, name: "Lived there" },
+    { v: 3, name: "Stayed overnight" },
+    { v: 2, name: "Visited" },
+    { v: 1, name: "Passed through" },
+    { v: 0, name: "Not yet" }
+  ];
+  var LV = {}; LEVELS.forEach(function (l) { LV[l.v] = l.name; });
+  var STATES = [["AL","Alabama"],["AK","Alaska"],["AZ","Arizona"],["AR","Arkansas"],["CA","California"],["CO","Colorado"],["CT","Connecticut"],["DE","Delaware"],["DC","District of Columbia"],["FL","Florida"],["GA","Georgia"],["HI","Hawaii"],["ID","Idaho"],["IL","Illinois"],["IN","Indiana"],["IA","Iowa"],["KS","Kansas"],["KY","Kentucky"],["LA","Louisiana"],["ME","Maine"],["MD","Maryland"],["MA","Massachusetts"],["MI","Michigan"],["MN","Minnesota"],["MS","Mississippi"],["MO","Missouri"],["MT","Montana"],["NE","Nebraska"],["NV","Nevada"],["NH","New Hampshire"],["NJ","New Jersey"],["NM","New Mexico"],["NY","New York"],["NC","North Carolina"],["ND","North Dakota"],["OH","Ohio"],["OK","Oklahoma"],["OR","Oregon"],["PA","Pennsylvania"],["RI","Rhode Island"],["SC","South Carolina"],["SD","South Dakota"],["TN","Tennessee"],["TX","Texas"],["UT","Utah"],["VT","Vermont"],["VA","Virginia"],["WA","Washington"],["WV","West Virginia"],["WI","Wisconsin"],["WY","Wyoming"]];
+  var NAME = {}; STATES.forEach(function (s) { NAME[s[0]] = s[1]; });
+  var SMALL = ["VT","NH","MA","RI","CT","NJ","DE","MD","DC"];
+  var EXAMPLE = {NY:4,NJ:3,PA:3,MA:3,CT:1,RI:2,VT:3,ME:2,DC:2,MD:1,VA:3,NC:2,FL:3,GA:1,IL:3,CA:3,NV:2,AZ:2,CO:3,WA:2,TX:1,LA:3,OH:1};
+  var KEY = "states-tracker-v1";
+
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { state = {}; }
+  var brush = 2;
+  var isExample = false;
+
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
+  function lvl(id) { return state[id] || 0; }
+  function setLevel(id, v) { if (isExample) { state = {}; } if (v) state[id] = v; else delete state[id]; isExample = false; save(); render(); }
+  function paint(id) { setLevel(id, lvl(id) === brush ? 0 : brush); }
+
+  // Brushes
+  var brushesEl = document.getElementById("brushes");
+  LEVELS.forEach(function (l) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "brush l" + l.v; b.dataset.v = l.v;
+    b.innerHTML = '<span class="sw" style="background:var(--f)"></span>' + l.name + ' <span class="ct" data-ct="' + l.v + '"></span>';
+    b.addEventListener("click", function () { brush = l.v; render(); });
+    brushesEl.appendChild(b);
+  });
+
+  // Index list
+  var grid = document.getElementById("grid");
+  STATES.forEach(function (s) {
+    var row = document.createElement("div");
+    row.className = "row"; row.dataset.id = s[0];
+    var opts = LEVELS.map(function (l) { return '<option value="' + l.v + '">' + l.name + '</option>'; }).join("");
+    row.innerHTML = '<span class="ab">' + s[0] + '</span><label for="sel-' + s[0] + '">' + s[1] + '</label><select id="sel-' + s[0] + '">' + opts + '</select>';
+    row.querySelector("select").addEventListener("change", function (e) { setLevel(s[0], +e.target.value); });
+    grid.appendChild(row);
+  });
+
+  // Map
+  var svg = document.getElementById("map");
+  var tip = document.getElementById("tip");
+  var box = document.getElementById("mapBox");
+  var NS = "http://www.w3.org/2000/svg";
+  var shapes = {};
+  function el(tag, attrs) { var n = document.createElementNS(NS, tag); for (var k in attrs) n.setAttribute(k, attrs[k]); return n; }
+  function showTip(id, evt) {
+    var r = box.getBoundingClientRect();
+    tip.innerHTML = "<b>" + NAME[id] + "</b> · " + LV[lvl(id)];
+    tip.style.left = Math.min(Math.max(evt.clientX - r.left, 80), r.width - 80) + "px";
+    tip.style.top = (evt.clientY - r.top) + "px";
+    tip.hidden = false;
+  }
+  function wire(node, id) {
+    node.setAttribute("tabindex", "0");
+    node.setAttribute("role", "button");
+    node.addEventListener("click", function () { paint(id); });
+    node.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); paint(id); } });
+    node.addEventListener("mousemove", function (e) { showTip(id, e); });
+    node.addEventListener("mouseleave", function () { tip.hidden = true; });
+  }
+  try {
+    var topo = Datamap.prototype.usaTopo;
+    var objKey = Object.keys(topo.objects)[0];
+    var feats = topojson.feature(topo, topo.objects[objKey]).features;
+    var proj = d3.geo.albersUsa().scale(950).translate([420, 255]);
+    var path = d3.geo.path().projection(proj);
+    var labels = el("g", {});
+    feats.forEach(function (f) {
+      var id = f.id; if (!NAME[id]) return;
+      var d = path(f); if (!d) return;
+      var p = el("path", { d: d, "class": "st" });
+      wire(p, id);
+      svg.appendChild(p);
+      shapes[id] = { path: p };
+      if (SMALL.indexOf(id) === -1) {
+        var c = path.centroid(f);
+        if (id === "FL") c[0] += 14; if (id === "LA") c[0] -= 10; if (id === "MI") { c[0] += 12; c[1] += 22; }
+        if (id === "KY") c[1] += 4; if (id === "ID") c[1] += 18; if (id === "HI") { c[0] -= 4; c[1] += 6; }
+        var t = el("text", { x: c[0], y: c[1] + 4, "class": "lbl" }); t.textContent = id;
+        labels.appendChild(t); shapes[id].label = t;
+      }
+    });
+    svg.appendChild(labels);
+    SMALL.forEach(function (id, i) {
+      var g = el("g", { "class": "callout", transform: "translate(880," + (150 + i * 30) + ")" });
+      g.appendChild(el("rect", { x: 0, y: 0, width: 44, height: 24, rx: 3 }));
+      var t = el("text", { x: 22, y: 16 }); t.textContent = id; g.appendChild(t);
+      g.setAttribute("aria-label", NAME[id]);
+      wire(g, id);
+      svg.appendChild(g);
+      shapes[id] = shapes[id] || {}; shapes[id].callout = g;
+    });
+  } catch (e) {
+    box.innerHTML = '<div class="map-fallback">The map could not load right now. Use the state index below; your levels still count.</div>';
+  }
+
+  function setLvlClass(node, v, base) { if (node) node.setAttribute("class", base + " l" + v); }
+
+  function render() {
+    var counts = {0:0,1:0,2:0,3:0,4:0};
+    STATES.forEach(function (s) {
+      var id = s[0], v = lvl(id);
+      if (id !== "DC") counts[v]++;
+      var sh = shapes[id];
+      if (sh) {
+        setLvlClass(sh.path, v, "st");
+        setLvlClass(sh.label, v, "lbl");
+        setLvlClass(sh.callout, v, "callout");
+        var nm = NAME[id] + ": " + LV[v];
+        if (sh.path) sh.path.setAttribute("aria-label", nm);
+        if (sh.callout) sh.callout.setAttribute("aria-label", nm);
+      }
+      var row = grid.querySelector('[data-id="' + id + '"]');
+      row.className = "row l" + v;
+      row.querySelector("select").value = v;
+    });
+    var been = 50 - counts[0];
+    var dc = lvl("DC");
+    document.getElementById("shieldNum").textContent = been;
+    document.getElementById("shieldSub").textContent = dc ? "plus D.C. (" + LV[dc].toLowerCase() + ")" : "plus D.C. not yet";
+    document.querySelectorAll(".brush").forEach(function (b) { b.setAttribute("aria-pressed", +b.dataset.v === brush ? "true" : "false"); });
+    document.querySelectorAll("[data-ct]").forEach(function (c) { c.textContent = counts[c.dataset.ct]; });
+    var bar = document.getElementById("bar"); bar.innerHTML = "";
+    [4,3,2,1].forEach(function (v) { var s = document.createElement("span"); s.className = "l" + v; s.style.background = "var(--f)"; s.style.width = (counts[v] / 50 * 100) + "%"; bar.appendChild(s); });
+    var pct = Math.round(been / 50 * 100);
+    var slept = counts[4] + counts[3];
+    document.getElementById("tallyRow").innerHTML =
+      "<span><b>" + been + "</b> of 50 states set foot in (" + pct + "%)</span>" +
+      "<span><b>" + slept + "</b> slept in</span>" +
+      "<span><b>" + counts[0] + "</b> still to go</span>" +
+      (isExample ? '<span style="color:var(--shield-red)">Showing example data</span>' : "");
+    document.getElementById("exampleBtn").hidden = been > 0 && !isExample;
+  }
+
+  // Actions
+  var status = document.getElementById("status");
+  function flash(msg) { status.textContent = msg; clearTimeout(flash.t); flash.t = setTimeout(function () { status.textContent = ""; }, 3500); }
+  function summary() {
+    var been = STATES.filter(function (s) { return s[0] !== "DC" && lvl(s[0]); }).length;
+    var out = ["I've been to " + been + " of 50 states" + (lvl("DC") ? " plus D.C." : "") + "."];
+    [4,3,2,1].forEach(function (v) {
+      var list = STATES.filter(function (s) { return lvl(s[0]) === v; }).map(function (s) { return s[1]; });
+      if (list.length) out.push(LV[v] + " (" + list.length + "): " + list.join(", "));
+    });
+    return out.join("\n");
+  }
+  document.getElementById("copyBtn").addEventListener("click", function () {
+    var text = summary();
+    try {
+      navigator.clipboard.writeText(text).then(function () { flash("Copied your summary"); }, fallback);
+    } catch (e) { fallback(); }
+    function fallback() {
+      var ta = document.createElement("textarea"); ta.value = text; ta.id = "copyFallback";
+      ta.style.cssText = "position:fixed;left:16px;right:16px;bottom:16px;height:120px;z-index:9;";
+      document.body.appendChild(ta); ta.select();
+      flash("Text selected. Copy it with your keyboard.");
+      ta.addEventListener("blur", function () { ta.remove(); });
+    }
+  });
+  document.getElementById("exampleBtn").addEventListener("click", function () {
+    state = JSON.parse(JSON.stringify(EXAMPLE)); isExample = true; render();
+    flash("Example loaded. Clear it to start your own.");
+  });
+  var resetBtn = document.getElementById("resetBtn");
+  var armed = false;
+  resetBtn.addEventListener("click", function () {
+    if (!armed) { armed = true; resetBtn.textContent = "Tap again to clear"; setTimeout(function () { armed = false; resetBtn.textContent = "Clear map"; }, 3000); return; }
+    armed = false; resetBtn.textContent = "Clear map";
+    state = {}; isExample = false; save(); render(); flash("Map cleared");
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
